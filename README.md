@@ -9,10 +9,9 @@ Paper: [AoH paper](https://undground.fun/aoh/static/images/aoh-paper.pdf)
 
 ## Demo
 
-<video src="assets/aoh-demo-0804.mp4" controls width="100%">
-  <a href="assets/aoh-demo-0804.mp4">Watch the AoH demo video</a>
-</video>
+[![AoH demo: Full Attention versus AoH](assets/aoh-demo-cover.jpg)](assets/aoh-demo-0804.mp4)
 
+*Click the image to watch the demo video.*
 
 ## Method
 <div align="center">
