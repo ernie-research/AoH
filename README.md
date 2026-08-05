@@ -10,10 +10,7 @@
 Paper: [AoH paper](https://undground.fun/aoh/static/images/aoh-paper.pdf)
 
 ## Demo
-
-[![AoH demo: Full Attention versus AoH](assets/aoh-demo-cover.jpg)](assets/aoh-demo-0804.mp4)
-
-*Click the image to watch the demo video.*
+https://github.com/user-attachments/assets/081e901d-3fec-4d57-bc47-cb619e748221
 
 ## Method
 <div align="center">
