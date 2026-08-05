@@ -106,6 +106,12 @@ python visualization/plot_head_classification.py outputs/qwen25-7b
 python visualization/plot_effective_rank.py outputs/qwen25-7b
 ```
 
+## Demo
+After setting up the environment, you can run the following script to execute the PassKey retrieval demo on the Llama-3.1-8B-Instruct-128K model. The demo is designed to run on a single A100 GPU and supports a context length of up to 128K tokens.
+
+bash examples/demo.sh
+
+
 ## License
 
 Released under the MIT License. See [LICENSE](LICENSE).
