@@ -9,10 +9,6 @@
 
 Paper: [AoH paper](https://undground.fun/aoh/static/images/aoh-paper.pdf)
 
-
-Uploading aoh-demo-0804-under-10mb.mp4…
-
-
 ## Demo
 
 [![AoH demo: Full Attention versus AoH](assets/aoh-demo-cover.jpg)](assets/aoh-demo-0804.mp4)
