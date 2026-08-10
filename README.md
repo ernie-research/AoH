@@ -140,11 +140,8 @@ bash scripts/demo.sh
 ```
 
 
-## License
-
-Released under the MIT License. See [LICENSE](LICENSE).
-
-## Cite
+## Citation
+If you find AoH useful or relevant to your project and research, please kindly cite our paper:
 
 ```
 @misc{yang2026autonomy,
