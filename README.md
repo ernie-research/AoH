@@ -1,7 +1,7 @@
 
 
 # AoH: Autonomy-of-Heads
-Paper: [AoH paper](https://undground.fun/aoh/static/images/aoh-paper.pdf)
+Paper: [AoH paper](https://arxiv.org/pdf/2608.06849)
 
 **AoH (Autonomy-of-Heads)**, a training-free method that classifies attention heads from the frozen query-key projection geometry.
 <div align="center">
