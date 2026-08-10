@@ -1,5 +1,9 @@
 numpy>=1.24
 torch>=2.1
-transformers>=4.40
+transformers>=4.51.1
 accelerate>=0.28
 tqdm>=4.66
+datasets>=2.16
+jieba>=0.42.1
+fuzzywuzzy>=0.18
+rouge>=1.0.1

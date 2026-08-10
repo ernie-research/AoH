@@ -8,24 +8,16 @@ import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BENCH_DIR = PROJECT_ROOT / "experiments" / "block2_efficiency"
-sys.path.insert(0, str(BENCH_DIR))
+sys.path.insert(0, str(PROJECT_ROOT))
 
 import numpy as np
 import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-try:
-    import bench_llama31_aoh_optimized as bench
-except ModuleNotFoundError as exc:
-    raise ModuleNotFoundError(
-        "This demo requires experiments/block2_efficiency/"
-        "bench_llama31_aoh_optimized.py, but that file is not included in this "
-        "repository archive. Add it under the project root before running the demo."
-    ) from exc
+from eval.efficiency import benchmark_llama31 as bench
 
-DEFAULT_MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"
+DEFAULT_MODEL_ID = "meta-llama/Meta-Llama-3.1-8B-Instruct"
 DEFAULT_HEAD_PATH = (
     PROJECT_ROOT
     / "outputs"
@@ -297,8 +289,8 @@ def main() -> None:
         print("Using Full Attention.")
     print("=" * 76, flush=True)
 
-    bench.MODEL_PATH = args.model_id
     model = bench.load_model(
+        args.model_id,
         args.gpus,
         args.per_gpu_gb,
         eager=mode == "aoh",

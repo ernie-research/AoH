@@ -2,9 +2,10 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DEMO_GPU="${DEMO_GPU:-0}"
 
 ## Full Attention
-CUDA_VISIBLE_DEVICES=0 \
+CUDA_VISIBLE_DEVICES="$DEMO_GPU" \
 python "$PROJECT_ROOT/examples/run_demo_llama31.py" \
 --sp 0.0 \
 --input-length 128000 \
@@ -12,7 +13,7 @@ python "$PROJECT_ROOT/examples/run_demo_llama31.py" \
 
 
 ## AoH Attention
-CUDA_VISIBLE_DEVICES=1 \
+CUDA_VISIBLE_DEVICES="$DEMO_GPU" \
 python "$PROJECT_ROOT/examples/run_demo_llama31.py" \
 --sp 0.5 \
 --input-length 128000 \

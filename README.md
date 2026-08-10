@@ -1,13 +1,13 @@
 
 
 # AoH: Autonomy-of-Heads
+Paper: [AoH paper](https://undground.fun/aoh/static/images/aoh-paper.pdf)
+
 **AoH (Autonomy-of-Heads)**, a training-free method that classifies attention heads from the frozen query-key projection geometry.
 <div align="center">
   <img src="./assets/figures/aoh-accuracy.png" width="46%">
   <img src="./assets/figures/aoh-efficiency.png" width="51%">
 </div>
-
-Paper: [AoH paper](https://undground.fun/aoh/static/images/aoh-paper.pdf)
 
 ## Demo
 https://github.com/user-attachments/assets/081e901d-3fec-4d57-bc47-cb619e748221
@@ -33,6 +33,12 @@ Install plotting dependencies when visualization is needed:
 
 ```bash
 pip install -e ".[visualization]"
+```
+
+Install LongBench evaluation dependencies before running the result scripts:
+
+```bash
+pip install -e ".[evaluation]"
 ```
 
 Model weights are loaded through Hugging Face Transformers. Access to gated models must be configured separately with Hugging Face.
@@ -97,6 +103,26 @@ python examples/qwen3.py
 
 The examples load full model weights. Adjust the model name, device, and output path in each script for your environment.
 
+
+## Results
+We evaluate AoH on LongBench, a long-context understanding suite covering 21 tasks across six categories. The evaluated models are Qwen3-8B, Llama-3.1-8B-Instruct, and Qwen2.5-7B. Unless otherwise stated, streaming heads retain 128 sink tokens and a 256-token recent window, and the main experiments use 50% per-layer sparsity.
+![results](./assets/figures/aoh-main-results.png)
+
+```bash
+bash scripts/run_result_eval.sh
+```
+
+
+## Efficiency
+AoH reduces KV-cache memory nearly proportionally to the fraction of streaming heads, and its latency benefits become more pronounced at longer contexts where attention and cache access dominate runtime. As shown in Figure 5 and Table 11, at 75% sparsity, AoH achieves up to 3.24x prefill speedup and 9.14x decode speedup at 256K context, while reducing KV-cache memory by up to 3.98x on Llama-3.1-8B-Instruct-128K.
+![efficiency](./assets/figures/efficiency-figure.png)
+![efficiency](./assets/figures/aoh-efficiency-table.png)
+
+```bash
+bash scripts/run_efficiency_eval.sh
+```
+
+
 ## Visualization
 
 After running AoH:
@@ -106,10 +132,12 @@ python visualization/plot_head_classification.py outputs/qwen25-7b
 python visualization/plot_effective_rank.py outputs/qwen25-7b
 ```
 
-## Demo
+## Run the Demo
 After setting up the environment, you can run the following script to execute the PassKey retrieval demo on the Llama-3.1-8B-Instruct-128K model. The demo is designed to run on a single A100 GPU and supports a context length of up to 128K tokens.
 
-bash examples/demo.sh
+```bash
+bash scripts/demo.sh
+```
 
 
 ## License
@@ -117,6 +145,7 @@ bash examples/demo.sh
 Released under the MIT License. See [LICENSE](LICENSE).
 
 ## Cite
+
 ```
 @misc{yang2026autonomyheads,
     title = {Autonomy-of-Heads: Data-Free Sparse Attention from Frozen Query-Key Geometry},
