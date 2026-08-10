@@ -105,22 +105,20 @@ The examples load full model weights. Adjust the model name, device, and output 
 
 
 ## Results
-We evaluate AoH on LongBench, a long-context understanding suite covering 21 tasks across six categories. The evaluated models are Qwen3-8B, Llama-3.1-8B-Instruct, and Qwen2.5-7B. Unless otherwise stated, streaming heads retain 128 sink tokens and a 256-token recent window, and the main experiments use 50% per-layer sparsity.
-![results](./assets/figures/aoh-main-results.png)
-
 ```bash
 bash scripts/run_result_eval.sh
 ```
+We evaluate AoH on LongBench, a long-context understanding suite covering 21 tasks across six categories. The evaluated models are Qwen3-8B, Llama-3.1-8B-Instruct, and Qwen2.5-7B. Unless otherwise stated, streaming heads retain 128 sink tokens and a 256-token recent window, and the main experiments use 50% per-layer sparsity.
+![results](./assets/figures/aoh-main-results.png)
 
 
 ## Efficiency
-AoH reduces KV-cache memory nearly proportionally to the fraction of streaming heads, and its latency benefits become more pronounced at longer contexts where attention and cache access dominate runtime. As shown in Figure 5 and Table 11, at 75% sparsity, AoH achieves up to 3.24x prefill speedup and 9.14x decode speedup at 256K context, while reducing KV-cache memory by up to 3.98x on Llama-3.1-8B-Instruct-128K.
-![efficiency](./assets/figures/efficiency-figure.png)
-![efficiency](./assets/figures/aoh-efficiency-table.png)
-
 ```bash
 bash scripts/run_efficiency_eval.sh
 ```
+AoH reduces KV-cache memory nearly proportionally to the fraction of streaming heads, and its latency benefits become more pronounced at longer contexts where attention and cache access dominate runtime. As shown in Figure 5 and Table 11, at 75% sparsity, AoH achieves up to 3.24x prefill speedup and 9.14x decode speedup at 256K context, while reducing KV-cache memory by up to 3.98x on Llama-3.1-8B-Instruct-128K.
+![efficiency](./assets/figures/efficiency-figure.png)
+![efficiency](./assets/figures/aoh-efficiency-table.png)
 
 
 ## Visualization
