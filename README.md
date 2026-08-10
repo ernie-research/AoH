@@ -115,3 +115,15 @@ bash examples/demo.sh
 ## License
 
 Released under the MIT License. See [LICENSE](LICENSE).
+
+## Cite
+```
+@misc{yang2026autonomyheads,
+    title = {Autonomy-of-Heads: Data-Free Sparse Attention from Frozen Query-Key Geometry},
+    author = {Yehan Yang and Junyuan Shang and Yang Li and Guanqun Zhao and Shuohuan Wang and Dianhai Yu},
+    year = {2026},
+    eprint = {2608.06849},
+    archivePrefix = {arXiv},
+    url = {https://arxiv.org/abs/2608.06849}
+}
+```
