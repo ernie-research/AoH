@@ -1,7 +1,26 @@
+<div align="center">
 
+<h2 align="center">
+<a href="https://github.com/ernie-research/AoH">Autonomy-of-Heads: Data-Free Sparse Attention from Frozen Query-Key Geometry </a>
+</h2>
 
-# AoH: Autonomy-of-Heads
-Paper: [AoH paper](https://arxiv.org/pdf/2608.06849)
+<h5 align="center">If you like our project, please give us a star ⭐ on GitHub for latest update.</h5>
+
+<p align="center">
+  <a href="https://undground.fun/aoh/">
+    <img src="https://img.shields.io/badge/Homepage-Project%20Page-1f6feb.svg" alt="AOH Homepage"/>
+  </a>
+  <a href="https://arxiv.org/abs/2608.06849">
+    <img src="https://img.shields.io/badge/Paper-arXiv%3A2608.20473-b31b1b.svg" alt="arXiv Paper"/>
+  </a>
+  <!-- <a href="https://huggingface.co/ernie-research/AVIOT">
+    <img src="https://img.shields.io/badge/Model-%F0%9F%A4%97%20AVIOT-ffd21e.svg" alt="Hugging Face Model"/>
+  </a> -->
+</p>
+
+</div>
+
+# Performance
 
 **AoH (Autonomy-of-Heads)**, a training-free method that classifies attention heads from the frozen query-key projection geometry.
 <div align="center">
@@ -14,7 +33,7 @@ https://github.com/user-attachments/assets/081e901d-3fec-4d57-bc47-cb619e748221
 
 ## Method
 <div align="center">
-  <img src="./assets/figures/aoh_vs_Input-based-0723.png" width="68%">
+  <img src="./assets/figures/aoh_vs_Input-based-0723.png" width="58%">
 </div>
 
 For each query head, AoH measures the effective rank of the query-key interaction matrix using a small head-dimension Gram matrix. Low-rank heads are classified as retrieval heads and retain full attention; higher-rank heads are classified as streaming heads and can use a local attention window.
