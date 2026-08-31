@@ -20,7 +20,7 @@
 
 </div>
 
-# Performance
+## Performance
 
 **AoH (Autonomy-of-Heads)**, a training-free method that classifies attention heads from the frozen query-key projection geometry.
 <div align="center">
