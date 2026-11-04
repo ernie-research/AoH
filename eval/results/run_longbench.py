@@ -51,6 +51,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sink-size", type=int, default=128)
     parser.add_argument("--recent-size", type=int, default=256)
     parser.add_argument("--chunk-size", type=int, default=256)
+    parser.add_argument(
+        "--protocol",
+        choices=["aoh", "eager"],
+        default="aoh",
+        help="aoh (default): FlashAttention-2 AoH runtime. All but the last "
+        "--decoding-simulation-length prompt tokens are prefilled in one flash_attn_func forward, "
+        "streaming heads are then trimmed to sink+recent KV and the remaining prompt tokens are "
+        "decoded one by one. eager: reference eager kernels with chunked prefill (--chunk-size); "
+        "streaming heads keep only sink+recent KV during the whole prefill",
+    )
+    parser.add_argument("--decoding-simulation-length", type=int, default=50)
     parser.add_argument("--gpus", default="cuda:0")
     parser.add_argument("--per-gpu-gb", type=int, default=72)
     parser.add_argument("--max-samples", type=int, help="Debug subset per task")
@@ -105,8 +116,34 @@ def eos_ids(tokenizer, model) -> set[int]:
     return output
 
 
-def greedy_generate(model, runtime, make_cache, input_ids, chunk_size, max_new_tokens, stop_ids):
-    cache, logits = runtime.aoh_prefill(model, make_cache, input_ids, chunk_size)
+def flash_prefill(model, make_cache, input_ids, sim_len):
+    """FlashAttention-2 AoH prefill: prompt[:-sim_len] in one forward (flash_attn_func over all
+    heads), the streaming heads' KV is trimmed to sink + recent, and the last sim_len prompt tokens
+    are decoded one at a time (attention_utils.aoh_flash_attention). The prefill / decoding-
+    simulation schedule matches the DuoAttention LongBench evaluation, so the two methods are
+    compared under the same protocol. Decoding continues on the same cache."""
+    split = max(input_ids.shape[1] - sim_len, 1)
+    cache = make_cache("flash")
+    # The patched attention ignores the HF mask; under "flash_attention_2" HF skips building the
+    # dense (split x split) 4D causal mask that eager would allocate.
+    attn_impl = model.config._attn_implementation
+    model.config._attn_implementation = "flash_attention_2"
+    try:
+        with torch.no_grad():
+            logits = model(input_ids=input_ids[:, :split], past_key_values=cache, use_cache=True,
+                           logits_to_keep=1).logits
+            for t in range(split, input_ids.shape[1]):
+                logits = model(input_ids=input_ids[:, t : t + 1], past_key_values=cache, use_cache=True).logits
+    finally:
+        model.config._attn_implementation = attn_impl
+    return cache, logits
+
+
+def greedy_generate(model, runtime, make_cache, input_ids, chunk_size, max_new_tokens, stop_ids, sim_len=None):
+    if sim_len is None:
+        cache, logits = runtime.aoh_prefill(model, make_cache, input_ids, chunk_size)
+    else:
+        cache, logits = flash_prefill(model, make_cache, input_ids, sim_len)
     token = logits[:, -1].argmax(dim=-1, keepdim=True)
     generated = []
     with torch.no_grad(), runtime.math_sdpa_only():
@@ -153,6 +190,7 @@ def run_task(
                 min(args.chunk_size, input_ids.shape[1]),
                 max_generation,
                 eos_ids(tokenizer, model),
+                args.decoding_simulation_length if args.protocol == "aoh" else None,
             )
             prediction = tokenizer.decode(generated, skip_special_tokens=True).strip()
             record = {
@@ -198,6 +236,8 @@ def main() -> None:
     )
     device = runtime.primary_device(args.gpus)
     output_dir = args.output_dir / args.model / args.head_path.parent.name
+    if args.protocol == "eager":
+        output_dir = output_dir.with_name(output_dir.name + "_eager")
 
     for task in tasks:
         output_path = output_dir / f"{task}.jsonl"
