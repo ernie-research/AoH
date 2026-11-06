@@ -129,7 +129,9 @@ bash scripts/run_result_eval.sh
 ```
 We evaluate AoH on LongBench, a long-context understanding suite covering 21 tasks across six categories. The evaluated models are Qwen3-8B, Llama-3.1-8B-Instruct, and Qwen2.5-7B. Unless otherwise stated, streaming heads retain 128 sink tokens and a 256-token recent window, and the main experiments use 50% per-layer sparsity.
 
-`eval/results/run_longbench.py` runs the FlashAttention-2 AoH runtime by default (`--protocol aoh`, requires `flash-attn>=2.7`): the prompt except its last 50 tokens (`--decoding-simulation-length`) is prefilled with `flash_attn_func`, streaming heads are trimmed to sink + recent KV, and the remaining tokens are decoded one by one. `--protocol eager` keeps the reference eager kernels with chunked prefill (`--chunk-size 256`). Both paths compute attention scores in fp32.
+`eval/results/run_longbench.py` runs the FlashAttention-2 AoH runtime by default (`--protocol aoh`, requires `flash-attn>=2.7`)
+`--protocol eager` keeps the reference eager kernels with chunked prefill (`--chunk-size 256`). Both paths compute attention scores in fp32.
+The Results below use `--protocol eager` to ensure a fair comparison of the performance and efficiency advantages inherent to the AoH approach itself.
 
 ![results](./assets/figures/aoh-main-results.png)
 
