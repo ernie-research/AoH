@@ -46,11 +46,11 @@ from transformers.models.llama.modeling_llama import apply_rotary_pos_emb
 
 _HERE = Path(__file__).resolve().parent
 try:
-    from .attention_utils import compress_stream, streaming_attention
+    from .attention_utils import compress_stream, aoh_flash_attention, streaming_attention
     from .benchmark_io import benchmark_config, load_progress, save_progress
     from .reorder_weights import reorder_attention_weights
 except ImportError:
-    from attention_utils import compress_stream, streaming_attention
+    from attention_utils import compress_stream, aoh_flash_attention, streaming_attention
     from benchmark_io import benchmark_config, load_progress, save_progress
     from reorder_weights import reorder_attention_weights
 
@@ -123,7 +123,8 @@ def causal_mask(q_len: int, k_len: int, past_len: int, device: torch.device) -> 
 def eager_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, past_len: int, causal: bool) -> torch.Tensor:
     # q,k,v: (B,H,Q/S,D). Manual eager attention avoids FlashAttention entirely.
     scale = q.shape[-1] ** -0.5
-    scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+    # fp32 scores: bf16 QK^T loses long-context retrieval (Qwen2.5-7B Full, passage_retrieval_en 66.0 -> 11.75)
+    scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
     if causal:
         mask = causal_mask(q.shape[-2], k.shape[-2], past_len, q.device)
         scores = scores.masked_fill(~mask[None, None, :, :], torch.finfo(scores.dtype).min)
@@ -132,7 +133,8 @@ def eager_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, past_len:
 
 
 class AoHKVCache(Cache):
-    def __init__(self, num_layers: int, n_ret: list[int], n_str: list[int], sink_size: int, recent_size: int):
+    def __init__(self, num_layers: int, n_ret: list[int], n_str: list[int], sink_size: int, recent_size: int,
+                 backend: str = "eager"):
         if DynamicLayer is None:
             super().__init__()
         else:
@@ -142,6 +144,8 @@ class AoHKVCache(Cache):
         self.n_str = n_str
         self.sink_size = sink_size
         self.recent_size = recent_size
+        # "flash": FlashAttention-2 AoH kernels (attention_utils.aoh_flash_attention); "eager": reference kernels below
+        self.backend = backend
         self.kv_seq_len = 0
         self.full_k: list[Optional[torch.Tensor]] = [None] * num_layers
         self.full_v: list[Optional[torch.Tensor]] = [None] * num_layers
@@ -205,6 +209,11 @@ def make_aoh_forward(layer_idx: int, n_ret: int, n_str: int, num_q: int, num_kv:
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
         kv_cache: AoHKVCache = past_key_values
+        if kv_cache.backend == "flash":
+            attn_out = aoh_flash_attention(kv_cache, layer_idx, q, k, v, n_ret, grp)
+            if layer_idx == kv_cache.num_layers - 1:
+                kv_cache.kv_seq_len += q_len
+            return self.o_proj(attn_out), None
         past_len = kv_cache.kv_seq_len
         outs = []
         if n_ret > 0:
@@ -263,7 +272,7 @@ def patch_aoh_model(model, labels: np.ndarray, sink_size: int, recent_size: int)
         layer.self_attn._orig_forward = layer.self_attn.forward
         layer.self_attn.forward = types.MethodType(make_aoh_forward(i, nr, ns, num_q, num_kv, head_dim), layer.self_attn)
         n_ret.append(nr); n_str.append(ns)
-    return lambda: AoHKVCache(len(layers), n_ret, n_str, sink_size, recent_size), n_ret, n_str
+    return lambda backend="eager": AoHKVCache(len(layers), n_ret, n_str, sink_size, recent_size, backend), n_ret, n_str
 
 
 def full_prefill(model, input_ids: torch.Tensor, chunk_size: int):
