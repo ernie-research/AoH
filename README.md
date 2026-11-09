@@ -145,6 +145,38 @@ AoH reduces KV-cache memory nearly proportionally to the fraction of streaming h
 ![efficiency](./assets/figures/aoh-efficiency-table.png)
 
 
+## vLLM Inference
+
+`aoh/vllm_ext` is a vLLM V1 plugin (tested with vLLM 0.10.1) that serves Llama models with an AoH head map. Installing the package registers it through the `vllm.general_plugins` entry point:
+
+```bash
+pip install -e ".[vllm]"
+```
+
+```python
+from vllm import LLM, SamplingParams
+
+llm = LLM(
+    "meta-llama/Llama-3.1-8B-Instruct",
+    hf_overrides={
+        "architectures": ["AoHLlamaForCausalLM"],
+        "aoh_head_map": "outputs/llama31-8b/head_classification.npy",
+        "aoh_sink": 128,
+        "aoh_recent": 256,
+        "aoh_dense_tail": 50,  # optional, default 50
+    },
+    enable_prefix_caching=False,
+)
+print(llm.generate(["The capital of France is"], SamplingParams(max_tokens=16))[0].outputs[0].text)
+```
+
+Each decoder layer splits its KV heads into a retrieval group (full attention, vLLM FlashAttention backend) and a streaming group (sink + recent window, a Triton kernel over the paged KV cache), each with its own KV cache group. Streaming heads follow the same protocol as `eval/results/run_longbench.py`: the prompt except its last `aoh_dense_tail` tokens is prefilled with full causal attention, then the streaming KV is trimmed to sink + recent, and the remaining prompt tokens and all generated tokens use sink + recent.
+
+Requirements: tensor parallel size 1, the same number of retrieval heads in every layer (per-layer sparsity), prefix caching disabled, and the model dtype for the KV cache.
+
+On Llama-3.1-8B-Instruct at 50% sparsity, the first 20 rows of each of the 21 LongBench tasks (420 rows) score 48.63 with the plugin, against 48.37 for the FlashAttention-2 runtime and 49.65 for full attention on vLLM. On one GPU at 850K context, decode is 1.27x / 1.70x / 2.96x faster than full attention at 25% / 50% / 75% sparsity. Prefill time and peak KV memory match full attention, because the streaming KV is held in full until the dense prefill ends.
+
+
 ## Visualization
 
 After running AoH:
