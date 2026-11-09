@@ -26,9 +26,13 @@ evaluation = [
     "fuzzywuzzy>=0.18",
     "rouge>=1.0.1",
 ]
+vllm = ["vllm>=0.10.1,<0.11"]
 
 [project.scripts]
 aoh = "aoh.cli:main"
+
+[project.entry-points."vllm.general_plugins"]
+aoh = "aoh.vllm_ext:register"
 
 [tool.setuptools.packages.find]
 include = ["aoh*", "eval*"]
